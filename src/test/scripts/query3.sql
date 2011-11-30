@@ -1,4 +1,4 @@
-add jar ../../../target/json-serde-1.0-SNAPSHOT-jar-with-dependencies.jar;
+add jar ../../../target/json-serde-1.1.jar;
 
 SELECT three[0] from json_test1;
 

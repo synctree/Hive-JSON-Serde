@@ -8,5 +8,5 @@ CREATE TABLE json_test1 (
     four string,
     json string)
 ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+WITH SERDEPROPERTIES ( "json.raw_column" = "json")
 STORED AS TEXTFILE;
-ALTER TABLE json_test1 SET SERDEPROPERTIES ( "json.raw_column" = "json");

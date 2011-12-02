@@ -67,9 +67,14 @@ public class JsonSerDe implements SerDe {
     StructObjectInspector rowObjectInspector;
     boolean[] columnSortOrderIsDesc;
     
-       // if set, will ignore malformed JSON in deserialization
+    // if set, will ignore malformed JSON in deserialization
     boolean ignoreMalformedJson = false;
-   public static final String PROP_IGNORE_MALFORMED_JSON = "ignore.malformed.json";
+    public static final String PROP_IGNORE_MALFORMED_JSON = "ignore.malformed.json";
+
+    // if set to some non-null value, a virtual column will be created that
+    // contains the entire row as raw JSON
+    String rawJsonColumnName = null;
+    public static final String PROP_RAW_JSON_COLUMN_NAME = "json.raw_column";
     
 
     /**
@@ -119,6 +124,8 @@ public class JsonSerDe implements SerDe {
         
         // other configuration
         ignoreMalformedJson = Boolean.parseBoolean(tbl.getProperty(PROP_IGNORE_MALFORMED_JSON, "false"));
+
+        rawJsonColumnName = tbl.getProperty(PROP_RAW_JSON_COLUMN_NAME);
         
     }
 
@@ -151,6 +158,14 @@ public class JsonSerDe implements SerDe {
                 public JSONObject put(String key, Object value)
                         throws JSONException {
                     return super.put(key.toLowerCase(), value);
+                }
+
+                @Override
+                public Object get(String key) throws JSONException {
+                    if (rawJsonColumnName != null && rawJsonColumnName.equals(key))
+                        return this.toString();
+                    else
+                        return super.get(key);
                 }
             };
         } catch (JSONException e) {
@@ -236,7 +251,12 @@ public class JsonSerDe implements SerDe {
                 try {
                     // we want to serialize columns with their proper HIVE name,
                     // not the _col2 kind of name usually generated upstream
-                    result.put((columnNames==null?sf.getFieldName():columnNames.get(i)), 
+                    String columnName = columnNames == null
+                        ? sf.getFieldName()
+                        : columnNames.get(i);
+                    // omit raw JSON column when serializing
+                    if (columnNames == null || !columnName.equals(rawJsonColumnName))
+                        result.put(columnName, 
                             serializeField(
                                 data,
                                 sf.getFieldObjectInspector()));

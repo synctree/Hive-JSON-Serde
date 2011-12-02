@@ -71,6 +71,7 @@ public class JsonSerDeTest {
         Properties tbl = new Properties();
         tbl.setProperty(Constants.LIST_COLUMNS, "one,two,three,four");
         tbl.setProperty(Constants.LIST_COLUMN_TYPES, "boolean,float,array<string>,string");
+        tbl.setProperty(JsonSerDe.PROP_RAW_JSON_COLUMN_NAME, "json");
         
         instance.initialize(conf, tbl);
     }
@@ -96,7 +97,9 @@ public class JsonSerDeTest {
 
     @Test
     public void testDeserialize2() throws Exception {
-        Writable w = new Text("{\"one\":true,\"three\":[\"red\",\"yellow\",[\"blue\",\"azure\",\"cobalt\",\"teal\"],\"orange\"],\"two\":19.5,\"four\":\"poop\"}");
+        final String JSON = "{\"one\":true,\"three\":[\"red\",\"yellow\",[\"blue\",\"azure\",\"cobalt\",\"teal\"],\"orange\"],\"two\":19.5,\"four\":\"poop\"}";
+
+        Writable w = new Text(JSON);
         Object expResult = null;
         JSONObject result = (JSONObject) instance.deserialize(w);
         assertEquals(result.get("four"),"poop");
@@ -105,6 +108,11 @@ public class JsonSerDeTest {
         
         assertTrue( ((JSONArray)result.get("three")).get(0) instanceof String );
         assertEquals( ((JSONArray)result.get("three")).get(0),"red");
+
+        // test that the "json" virtual column exists
+        assertTrue( result.get("json") instanceof String);
+        // test that "json" column contains the original JSON
+        assertEquals( result.get("json").toString(), new JSONObject(JSON).toString());
     }
 
     /**
@@ -139,7 +147,7 @@ public class JsonSerDeTest {
    // @Test
     public void testSerialize() throws SerDeException, JSONException {
         System.out.println("serialize");
-        ArrayList row = new ArrayList(5);
+        ArrayList row = new ArrayList();
         
         List<ObjectInspector> lOi = new LinkedList<ObjectInspector>();
         List<String> fieldNames = new LinkedList<String>();
@@ -175,6 +183,16 @@ public class JsonSerDeTest {
                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA),
                 ObjectInspectorFactory.getReflectionObjectInspector(String.class, 
                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA)));
+
+        // add a simulated "json" field
+        JSONObject json = new JSONObject();
+        json.put("atext", "HELLO");
+        json.put("anumber", 10);
+
+        row.add(json.toString());
+        fieldNames.add("json");
+        lOi.add(ObjectInspectorFactory.getReflectionObjectInspector(String.class, 
+                   ObjectInspectorFactory.ObjectInspectorOptions.JAVA));
         
         
         StructObjectInspector soi = ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, lOi);
@@ -185,6 +203,9 @@ public class JsonSerDeTest {
         assertEquals(res.getString("atext"), row.get(0));
         
         assertEquals(res.get("anumber") , row.get(1));
+
+        // assert "json" field was NOT serialized
+        assertEquals(res.get("json"), null);
         
         // after serialization the internal contents of JSONObject are destroyed (overwritten by their string representation
        // (for map and arrays) 

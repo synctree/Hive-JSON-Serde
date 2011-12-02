@@ -139,7 +139,7 @@ public class JsonSerDe implements SerDe {
      */
     @Override
     public Object deserialize(Writable w) throws SerDeException {
-        Text rowText = (Text) w;
+        final Text rowText = (Text) w;
         
         // Try parsing row into JSON object
         JSONObject jObj = null;
@@ -163,7 +163,7 @@ public class JsonSerDe implements SerDe {
                 @Override
                 public Object get(String key) throws JSONException {
                     if (rawJsonColumnName != null && rawJsonColumnName.equals(key))
-                        return this.toString();
+                        return rowText.toString();
                     else
                         return super.get(key);
                 }

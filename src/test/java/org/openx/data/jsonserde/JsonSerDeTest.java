@@ -112,7 +112,7 @@ public class JsonSerDeTest {
         // test that the "json" virtual column exists
         assertTrue( result.get("json") instanceof String);
         // test that "json" column contains the original JSON
-        assertEquals( result.get("json").toString(), new JSONObject(JSON).toString());
+        assertEquals( result.get("json").toString(), JSON);
     }
 
     /**

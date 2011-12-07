@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.serde.Constants;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
+import org.apache.hadoop.hive.serde2.lazy.LazyString;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
@@ -246,15 +247,15 @@ public class JsonSerDe implements SerDe {
         // initialize JSONObject from raw JSON column if defined
         if (columnNames != null) {
             int jsonColumnIndex = columnNames.indexOf(rawJsonColumnName);
-            if (jsonColumnIndex != -1 && obj instanceof JSONObject) {
-                JSONObject jsonObject = (JSONObject)obj;
-                StructField sf = fields.get(jsonColumnIndex);
-                try {
-                    Object data = jsonObject.get(rawJsonColumnName);
-                    if (data instanceof String) result = new JSONObject(data.toString());
-                } catch (JSONException ex) {
-                    throw new RuntimeException(ex);
+            Object data = null;
+            try {
+                if(jsonColumnIndex != -1) {
+                    data = soi.getStructFieldData(obj, fields.get(jsonColumnIndex));
+                    if(data == null && obj instanceof JSONObject) data = ((JSONObject)obj).get(rawJsonColumnName);
                 }
+                if (data instanceof String || data instanceof LazyString) result = new JSONObject(data.toString());
+            } catch (JSONException ex) {
+                throw new RuntimeException(ex);
             }
         }
 

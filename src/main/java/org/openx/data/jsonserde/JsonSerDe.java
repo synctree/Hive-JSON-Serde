@@ -246,16 +246,14 @@ public class JsonSerDe implements SerDe {
         // initialize JSONObject from raw JSON column if defined
         if (columnNames != null) {
             int jsonColumnIndex = columnNames.indexOf(rawJsonColumnName);
-            if (jsonColumnIndex != -1) {
+            if (jsonColumnIndex != -1 && obj instanceof JSONObject) {
+                JSONObject jsonObject = (JSONObject)obj;
                 StructField sf = fields.get(jsonColumnIndex);
-                Object data = soi.getStructFieldData(obj, sf);
-
-                if (data instanceof String) {
-                    try { 
-                        result = new JSONObject(data.toString());
-                    } catch (JSONException ex) {
-                        // ignore
-                    }
+                try {
+                    Object data = jsonObject.get(rawJsonColumnName);
+                    if (data instanceof String) result = new JSONObject(data.toString());
+                } catch (JSONException ex) {
+                    throw new RuntimeException(ex);
                 }
             }
         }
@@ -280,7 +278,7 @@ public class JsonSerDe implements SerDe {
                                 sf.getFieldObjectInspector()));
                     
                 } catch (JSONException ex) {
-                   LOG.warn("Problem serialzing", ex);
+                   LOG.warn("Problem serializing", ex);
                    throw new RuntimeException(ex);
                 }
             }

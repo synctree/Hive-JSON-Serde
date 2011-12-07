@@ -45,7 +45,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspec
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.io.Text;
-import org.json.JSONArray;
+import org.openx.data.jsonserde.json.JSONArray;
 import org.openx.data.jsonserde.json.JSONException;
 import org.openx.data.jsonserde.json.JSONObject;
 import org.openx.data.jsonserde.objectinspector.JsonObjectInspectorFactory;
@@ -228,9 +228,9 @@ public class JsonSerDe implements SerDe {
      * Serializing means getting every field, and setting the appropriate 
      * JSONObject field. Actual serialization is done at the end when
      * the whole JSON object is built
-     * @param serializer
+     * @param columnNames
      * @param obj
-     * @param structObjectInspector 
+     * @param soi
      */
     private JSONObject serializeStruct( Object obj,
             StructObjectInspector soi, List<String> columnNames) {
@@ -351,7 +351,7 @@ public class JsonSerDe implements SerDe {
             Object element = loi.getListElement(obj, i);
             try {
                 ar.put(i, serializeField(element, loi.getListElementObjectInspector() ) );
-            } catch (org.json.JSONException ex) {
+            } catch (JSONException ex) {
                 LOG.warn("Problem serializing array", ex);
                 throw new RuntimeException(ex);
             }

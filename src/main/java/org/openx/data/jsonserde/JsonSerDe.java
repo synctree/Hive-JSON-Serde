@@ -240,9 +240,27 @@ public class JsonSerDe implements SerDe {
         }
 
         JSONObject result = new JSONObject();
-        
+
         List<? extends StructField> fields = soi.getAllStructFieldRefs();
-        
+
+        // initialize JSONObject from raw JSON column if defined
+        if (columnNames != null) {
+            int jsonColumnIndex = columnNames.indexOf(rawJsonColumnName);
+            if (jsonColumnIndex != -1) {
+                StructField sf = fields.get(jsonColumnIndex);
+                Object data = soi.getStructFieldData(obj, sf);
+
+                if (data instanceof String) {
+                    try { 
+                        result = new JSONObject(data.toString());
+                    } catch (JSONException ex) {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        // load remaining data from defined columns 
         for (int i =0; i< fields.size(); i++) {
             StructField sf = fields.get(i);
             Object data = soi.getStructFieldData(obj, sf);

@@ -113,6 +113,21 @@ public class JsonSerDeTest {
         assertTrue( result.get("json") instanceof String);
         // test that "json" column contains the original JSON
         assertEquals( result.get("json").toString(), JSON);
+
+        // add raw JSON column to input text and deserialize again
+        result.put("json", JSON);
+        w = new Text(result.toString());
+        result = (JSONObject) instance.deserialize(w);
+
+        // check all previous assertions still true
+        assertEquals(result.get("four"),"poop");
+        assertTrue( result.get("three") instanceof JSONArray);
+        assertTrue( ((JSONArray)result.get("three")).get(0) instanceof String );
+        assertEquals( ((JSONArray)result.get("three")).get(0),"red");
+        // test that the "json" virtual column exists
+        assertTrue( result.get("json") instanceof String);
+        // test that "json" column contains the original JSON
+        assertEquals( result.get("json").toString(), w.toString());
     }
 
     /**
@@ -187,7 +202,8 @@ public class JsonSerDeTest {
         // add a simulated "json" field
         JSONObject json = new JSONObject();
         json.put("atext", "HELLO");
-        json.put("anumber", 10);
+        json.put("anumber", 11);
+        json.put("moretext", "from raw JSON");
 
         row.add(json.toString());
         fieldNames.add("json");
@@ -206,6 +222,8 @@ public class JsonSerDeTest {
 
         // assert "json" field was NOT serialized
         assertEquals(res.get("json"), null);
+        // assert raw JSON colum did get parsed
+        assertEquals(res.get("moretext"), json.get("moretext"));
         
         // after serialization the internal contents of JSONObject are destroyed (overwritten by their string representation
        // (for map and arrays) 
